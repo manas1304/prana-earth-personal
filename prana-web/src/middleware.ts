@@ -59,6 +59,27 @@ export default function middleware(req: NextRequest) {
   }
 
   if (isVercelPreview || isLocalhost) {
+
+    if (pathname === "/marketplace" || pathname.startsWith("/marketplace/")) {
+  const subPath = pathname.replace(/^\/marketplace/, "");
+  url.pathname = `/sites/marketplace${subPath}`;
+  return NextResponse.rewrite(url);
+}
+
+if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+  const subPath = pathname.replace(/^\/admin/, "") || "/";
+  const adminToken = req.cookies.get("access_token")?.value;
+  if (subPath === "/login" && adminToken) {
+    return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+  }
+  if (subPath !== "/login" && !adminToken) {
+    return NextResponse.redirect(new URL("/admin/login", req.url));
+  }
+  url.pathname = `/sites/admin${subPath === "/" ? "" : subPath}`;
+  return NextResponse.rewrite(url);
+}
+
+    
     // Default: serve the predict app at the root
     if (pathname === "/") {
       url.pathname = "/sites/predict";
