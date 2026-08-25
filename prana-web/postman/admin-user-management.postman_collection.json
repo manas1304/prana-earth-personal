@@ -1,0 +1,228 @@
+{
+  "info": {
+    "_postman_id": "prana-admin-user-mgmt-v1",
+    "name": "Prana Earth — Admin User Management",
+    "description": "Server Actions for the Admin User Management panel.\n\nAll requests are Next.js Server Actions called via POST to /api/... proxy routes.\nFor local testing, these actions can be called directly from the Next.js app.\n\n**Auth:** All endpoints require an active admin session cookie (access_token).\n\n**Base URL:** http://localhost:3000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "BASE_URL", "value": "http://localhost:3000", "type": "string" },
+    { "key": "USER_ID", "value": "REPLACE_WITH_ACTUAL_USER_UUID", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Get All Users (All tab, default)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "all", "description": "all | predict | marketplace | paid" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers()\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nReturns paginated list of ALL users (role=USER, not deleted).\nIncludes: organization name, active plan, last login, isActive status."
+      }
+    },
+    {
+      "name": "2. Get Users — Search by name/email/org",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?search=john",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "all" },
+            { "key": "search", "value": "john", "description": "Matches fullName, email, or organization name" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ search: 'john' })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nSearch is case-insensitive and matches across: fullName, email, organization name."
+      }
+    },
+    {
+      "name": "3. Get Users — Marketplace Tab",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?tab=marketplace",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "marketplace", "description": "Returns users with MARKETPLACE or BUNDLE active subscription" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ tab: 'marketplace' })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nReturns only users with an active MARKETPLACE or BUNDLE plan."
+      }
+    },
+    {
+      "name": "4. Get Users — Predict Tab",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?tab=predict",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "predict", "description": "Returns users with PREDICT or BUNDLE active subscription" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ tab: 'predict' })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nReturns only users with an active PREDICT or BUNDLE plan."
+      }
+    },
+    {
+      "name": "5. Get Users — Paid/Bundle Tab",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?tab=paid",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "paid", "description": "Returns users with any active paid subscription" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ tab: 'paid' })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nReturns users with PREDICT, MARKETPLACE, or BUNDLE active subscriptions."
+      }
+    },
+    {
+      "name": "6. Get Users — Filter by Plan",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?plan=MARKETPLACE",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "all" },
+            { "key": "plan", "value": "MARKETPLACE", "description": "FREE | PREDICT | MARKETPLACE | BUNDLE" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ plan: 'MARKETPLACE' })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nPlan values:\n- FREE → users with NO active paid subscription\n- PREDICT → active PREDICT plan only\n- MARKETPLACE → active MARKETPLACE plan only\n- BUNDLE → active BUNDLE plan only"
+      }
+    },
+    {
+      "name": "7. Get Users — Filter by Status (Deactivated)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?status=deactivated",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "all" },
+            { "key": "status", "value": "deactivated", "description": "active | deactivated" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ status: 'deactivated' })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nStatus values: 'active' | 'deactivated'"
+      }
+    },
+    {
+      "name": "8. Get Users — Combined Filters",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users?tab=marketplace&search=acme&plan=MARKETPLACE&status=active&page=1&limit=20",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users"],
+          "query": [
+            { "key": "tab", "value": "marketplace" },
+            { "key": "search", "value": "acme" },
+            { "key": "plan", "value": "MARKETPLACE" },
+            { "key": "status", "value": "active" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "20" }
+          ]
+        },
+        "description": "Server Action: getAdminUsers({ tab, search, plan, status, page, limit })\nImport: import { getAdminUsers } from '@/actions/admin-user-management.actions';\n\nAll filters can be combined. Pagination: page starts at 1, max limit is 100."
+      }
+    },
+    {
+      "name": "9. Get User Details (View Details)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users/{{USER_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users", "{{USER_ID}}"]
+        },
+        "description": "Server Action: getAdminUserDetails(userId)\nImport: import { getAdminUserDetails } from '@/actions/admin-user-management.actions';\n\nReturns:\n- Basic Info: fullName, email, phone, avatarUrl, jobTitle, countryRegion\n- Organization: id, name, slug, industry, memberRole, joinedAt\n- Subscription: planName, planType, billingCycle, status, startsAt, expiresAt, priceMonthly, priceYearly\n- Payments: Array of { id, amount, currency, status, paymentProvider, paidAt, planName, planType }\n\nSubscription = null means FREE tier (never purchased)."
+      }
+    },
+    {
+      "name": "10. Deactivate User",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users/{{USER_ID}}/deactivate",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users", "{{USER_ID}}", "deactivate"]
+        },
+        "description": "Server Action: deactivateAdminUser(userId)\nImport: import { deactivateAdminUser } from '@/actions/admin-user-management.actions';\n\nSets isActive = false. User cannot log in but all data is preserved.\nCan be reversed with activateAdminUser().\n\nReturns: { id, fullName, email, isActive: false }"
+      }
+    },
+    {
+      "name": "11. Activate User",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users/{{USER_ID}}/activate",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users", "{{USER_ID}}", "activate"]
+        },
+        "description": "Server Action: activateAdminUser(userId)\nImport: import { activateAdminUser } from '@/actions/admin-user-management.actions';\n\nSets isActive = true. Restores access for a deactivated user.\n\nReturns: { id, fullName, email, isActive: true }"
+      }
+    },
+    {
+      "name": "12. Delete User (Soft Delete)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/users/{{USER_ID}}",
+          "host": ["{{BASE_URL}}"],
+          "path": ["api", "admin", "users", "{{USER_ID}}"]
+        },
+        "description": "Server Action: deleteAdminUser(userId)\nImport: import { deleteAdminUser } from '@/actions/admin-user-management.actions';\n\n⚠️ IRREVERSIBLE from the UI. Sets deletedAt timestamp and isActive = false.\nUser will not appear in any list queries after this.\nAll historical data (subscriptions, payments) is preserved for audit.\n\nReturns: { id, fullName, email, deletedAt }"
+      }
+    }
+  ]
+}

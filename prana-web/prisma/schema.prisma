@@ -1,0 +1,1407 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [uuidOssp(map: "uuid-ossp"), citext, postgis]
+}
+
+
+// Enums
+
+enum UserRole {
+  USER
+  ADMIN
+  @@map("user_role")
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+
+  @@map("auth_provider")
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum SubscriptionStatus {
+  PENDING
+  TRIAL 
+  ACTIVE 
+  CANCELLED
+  EXPIRED
+
+  @@map("subscription_status")
+}
+
+enum SubscriptionType {
+  FREE
+  PREDICT
+  MARKETPLACE
+  BUNDLE
+
+  @@map("subscription_type")
+}
+
+enum AssessmentStatus {
+  QUEUED
+  PENDING
+  VALIDATING
+  DATA_FETCHING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+
+  @@map("assessment_status")
+}
+
+enum AssetType {
+  DATA_CENTER
+  MANUFACTURING_UNIT
+  WAREHOUSE
+  COMMERCIAL_BUILDING
+  INDUSTRIAL_FACILITY
+  ENERGY_INFRASTRUCTURE
+  OFFICE_CAMPUS
+  LOGISTICS_TRANSPORTATION_HUB
+  RESIDENTIAL
+  AGRICULTURE_FARMLAND
+  OTHER
+
+  @@map("asset_type")
+}
+
+enum ReportType {
+  CLIMATE_RISK
+  ESG
+  EXECUTIVE
+  DASHBOARD
+}
+
+enum ReportStatus {
+  QUEUED
+  GENERATING
+  READY
+  FAILED
+  ARCHIVED
+
+  @@map("report_status")
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+
+  @@map("risk_level")
+}
+
+enum DocumentType {
+  SUSTAINABILITY_REPORT
+  BRSR
+  REPORT
+  ESG_DISCLOSURE
+  CONCEPT_NOTE
+  DPR
+  BROCHURE
+  IMAGE
+  OTHER
+
+  @@map("document_type")
+}
+
+enum NotificationType {
+  WELCOME
+  ACCOUNT_CREATED
+  LOGIN_ALERT
+  PROJECT_PUBLISHED
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+  SUBSCRIPTION_PURCHASED
+  SUBSCRIPTION_EXPIRING
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  ASSESSMENT_STARTED
+  ASSESSMENT_COMPLETED
+  ASSESSMENT_FAILED
+  REPORT_READY
+  PROJECT_RECOMMENDED
+  EXPRESS_INTEREST_RECEIVED
+  DPR_REQUEST_RECEIVED
+  CONTACT_SUBMISSION
+  SYSTEM
+
+  @@map("notification_type")
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@map("organization_role")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  CANCELLED
+  @@map("payment_status")
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ONGOING
+  COMPLETED
+  FUNDING_OPEN
+  UPCOMING
+  @@map("project_status")
+}
+
+enum InterestStatus {
+NEW
+IN_PROGRESS
+CONTACTED
+RESOLVED
+REJECTED
+  @@map("interest_status")
+}
+
+enum AIInsightStatus {
+  GENERATED
+  REVIEWED
+  PUBLISHED
+  FAILED
+  @@map("ai_insight_status")
+}
+
+enum AssessmentType {
+  INITIAL
+  REASSESSMENT
+}
+
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum ProjectVisibility {
+  PUBLIC
+  SUBSCRIBER_ONLY
+}
+
+enum PaymentProvider {
+  RAZORPAY
+}
+
+enum ProjectApprovalStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubscriptionBillingCycle {
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+}
+
+enum ImplementationPartnerStatus {
+  ACTIVE
+  UNDER_REVIEW
+  INACTIVE
+
+  @@map("implementation_partner_status")
+}
+
+enum PartnerType {
+  NGO
+  ENGINEERING_AGENCY
+  ENVIRONMENTAL_FIRM
+  CONSULTING_FIRM
+  GOVERNMENT_BODY
+  OTHER
+
+  @@map("partner_type")
+}
+
+// =============================================================================
+// USERS
+// =============================================================================
+
+model User {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fullName     String   @map("full_name") @db.VarChar(255)
+  email        String   @unique @db.Citext
+  passwordHash String?  @map("password_hash")
+  role         UserRole @default(USER) @map("user_role")   
+
+  phone         String? @unique @db.VarChar(30)
+  jobTitle      String? @map("job_title") @db.VarChar(100)
+  countryRegion String? @map("country_region") @db.VarChar(100)
+  timezone      String? @db.VarChar(100)
+  avatarUrl     String? @map("avatar_url") @db.Text
+  /// Free-form JSON for fields that don't warrant a dedicated column
+  /// (e.g. `company`, `agreed` from the register form, marketing
+  /// opt-ins, last-seen device).
+  metadata      Json?   @map("metadata")
+
+  isEmailVerified Boolean @default(false) @map("is_email_verified")
+  isActive        Boolean @default(true) @map("is_active")
+
+  lastLoginAt        DateTime? @map("last_login_at") @db.Timestamptz
+  lastActiveAt       DateTime? @map("last_active_at") @db.Timestamptz
+  profileCompletedAt DateTime? @map("profile_completed_at") @db.Timestamptz
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Authentication
+  oauthAccounts       OAuthAccount[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  sessions            Session[]
+
+  // Organization
+  organizationsCreated    Organization[]      @relation("OrganizationCreatedBy")
+  organizationMemberships OrganizationMember[]
+
+  // Predict
+  assetsCreated        Asset[]        @relation("AssetCreatedBy")
+  assessmentsInitiated Assessment[]   @relation("AssessmentInitiatedBy")
+  reportsGenerated     Report[]       @relation("ReportGeneratedBy")
+  aiJobs               AIJob[]
+
+  // Marketplace
+  savedProjects      SavedProject[]
+  dprRequests        DPRRequest[]
+  expressInterests   ExpressInterest[]
+  contactSubmissions ContactSubmission[]
+
+  // Billing
+  subscriptions Subscription[]
+  payments      Payment[]
+
+  // System
+  notifications              Notification[]
+  documentsUploaded          OrganizationDocument[]   @relation("DocumentUploadedBy")
+  apiKeysCreated             ApiKey[]                 @relation("ApiKeyCreatedBy")
+  auditLogs                  AuditLog[]
+  implementationPartners     ImplementationPartner[]  @relation("PartnerCreatedBy")
+  notificationPreference     NotificationPreference?
+  threadParticipations       MessageParticipant[]
+  messagesSent               Message[]                @relation("MessagesSent")
+  supportTickets             SupportTicket[]          @relation("TicketsRaised")
+
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([lastLoginAt])
+  @@index([deletedAt])
+
+  @@map("users")
+}
+
+model Organization {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  name        String  @db.VarChar(255)
+  slug        String? @unique @db.VarChar(255)
+  logoUrl     String? @map("logo_url")
+  industry    String? @db.VarChar(255)
+  companySize String? @map("company_size") @db.VarChar(100)
+  website     String?
+  country     String? @db.VarChar(100)
+  /// Long-form "About" copy for the org (shown on /settings).
+  about       String? @db.Text
+
+  createdById String? @map("created_by") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  createdBy          User?                           @relation("OrganizationCreatedBy", fields: [createdById], references: [id])
+  members            OrganizationMember[]
+  subscriptions      Subscription[]
+  assets             Asset[]
+  documents          OrganizationDocument[]
+  dashboardSnapshots OrganizationDashboardSnapshot[]
+  apiKeys            ApiKey[]
+  projects           Project[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  role           UserRole
+
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+// =============================================================================
+// AUTH & SECURITY
+// =============================================================================
+
+model RefreshToken {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId    String @map("user_id") @db.Uuid
+  tokenHash String @map("token_hash")
+
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  ipAddress String? @map("ip_address") @db.Inet
+  userAgent String? @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId    String @map("user_id") @db.Uuid
+  tokenHash String @map("token_hash")
+
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_tokens")
+}
+
+model OAuthAccount {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  provider       String   @db.VarChar(50)
+  providerUserId String   @map("provider_user_id") @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@map("oauth_accounts")
+}
+
+model Session {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @map("token_hash") @unique
+  ipAddress String?  @map("ip_address") @db.Inet
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email     String   @db.Citext
+  tokenHash String   @map("token_hash") @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("email_verification_tokens")
+}
+
+
+// =============================================================================
+// SUBSCRIPTIONS
+// =============================================================================
+
+model SubscriptionPlan {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  name           String?           @db.VarChar(255)
+  type           SubscriptionType?
+  description    String?
+  priceMonthly   Decimal?          @map("price_monthly") @db.Decimal(12, 2)
+  priceYearly    Decimal?          @map("price_yearly") @db.Decimal(12, 2)
+  maxAssets      Int?              @map("max_assets")
+  maxAssessments Int?              @map("max_assessments")
+  satelliteScans Int?              @map("satellite_scans")
+  documentStorage Int?             @map("document_storage")
+  features       Json?
+
+  isActive          Boolean @default(true) @map("is_active")
+  isPubliclyVisible Boolean @default(true) @map("is_publicly_visible")
+  applyDiscount     Boolean @default(false) @map("apply_discount")
+  discountPercentage Decimal? @map("discount_percentage") @db.Decimal(5, 2)
+  discountDuration   Int?     @map("discount_duration")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId         String?             @map("user_id") @db.Uuid
+  organizationId String              @map("organization_id") @db.Uuid
+  planId         String              @map("plan_id") @db.Uuid
+  status         SubscriptionStatus?
+  billingCycle   SubscriptionBillingCycle? @map("billing_cycle")
+
+  startsAt  DateTime? @map("starts_at") @db.Timestamptz
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+
+  billingProvider        String? @map("billing_provider") @db.VarChar(100)
+  externalSubscriptionId String? @map("external_subscription_id")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user         User?            @relation(fields: [userId], references: [id])
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  plan         SubscriptionPlan @relation(fields: [planId], references: [id])
+  payments     Payment[]
+
+  @@map("subscriptions")
+}
+
+
+model Payment {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId         String?  @map("user_id") @db.Uuid
+  subscriptionId String   @map("subscription_id") @db.Uuid
+  amount         Decimal? @db.Decimal(12, 2)
+  currency       String?  @db.VarChar(10)
+
+  paymentProvider   String? @map("payment_provider") @db.VarChar(100)
+  providerPaymentId String? @map("provider_payment_id")
+  status            String? @db.VarChar(50)
+
+  paidAt    DateTime? @map("paid_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user         User?        @relation(fields: [userId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@map("payments")
+}
+
+// =============================================================================
+// ORGANIZATION FILES
+// =============================================================================
+
+model OrganizationDocument {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  organizationId String        @map("organization_id") @db.Uuid
+  type           DocumentType?
+  fileName       String?       @map("file_name")
+  fileUrl        String?       @map("file_url")
+  uploadedById   String?       @map("uploaded_by") @db.Uuid
+  metadata       Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  uploadedBy   User?        @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+
+  @@map("organization_documents")
+}
+
+// =============================================================================
+// ASSETS
+// =============================================================================
+
+model Asset {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  organizationId  String     @map("organization_id") @db.Uuid
+  name            String     @db.VarChar(255)
+  type            AssetType?
+  customAssetType String?    @map("custom_asset_type") @db.VarChar(255)
+
+  address    String?
+  country    String? @db.VarChar(100)
+  state      String? @db.VarChar(100)
+  city       String? @db.VarChar(100)
+  postalCode String? @map("postal_code") @db.VarChar(30)
+
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+
+  // PostGIS geography point — stored as Unsupported; managed via raw SQL / migrations
+  geom Unsupported("geography(Point, 4326)")?
+
+  assetSize Decimal? @map("asset_size") @db.Decimal(18, 2)
+  metadata  Json?
+
+  createdById String? @map("created_by") @db.Uuid
+  isDeleted   Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  createdBy    User?        @relation("AssetCreatedBy", fields: [createdById], references: [id])
+  assessments  Assessment[]
+
+  @@index([organizationId])
+  // NOTE: The GIST index on `geom` must be created via a raw SQL migration:
+  // CREATE INDEX assets_geom_idx ON assets USING GIST (geom);
+  @@map("assets")
+}
+
+// =============================================================================
+// ASSESSMENTS
+// =============================================================================
+
+model Assessment {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assetId       String            @map("asset_id") @db.Uuid
+  initiatedById String?           @map("initiated_by") @db.Uuid
+  version       Int?
+  status        AssessmentStatus?
+
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  failureReason         String? @map("failure_reason")
+  processingTimeSeconds Int?    @map("processing_time_seconds")
+  isLatest              Boolean @default(true) @map("is_latest")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  asset                      Asset                       @relation(fields: [assetId], references: [id])
+  initiatedBy                User?                       @relation("AssessmentInitiatedBy", fields: [initiatedById], references: [id])
+  pipelineSteps              AssessmentPipelineStep[]
+  climateRiskScores          ClimateRiskScore[]
+  indicatorScores            IndicatorScore[]
+  scenarioAnalyses           ScenarioAnalysis[]
+  esgInsights                EsgInsight[]
+  reports                    Report[]
+  marketplaceRecommendations MarketplaceRecommendation[]
+  aiJobs                     AIJob[]
+
+  @@unique([assetId, version])
+  @@index([assetId, isLatest])
+  @@index([status])
+  @@map("assessments")
+}
+
+// =============================================================================
+// ASSESSMENT PIPELINE STEPS
+// =============================================================================
+
+model AssessmentPipelineStep {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId String            @map("assessment_id") @db.Uuid
+  stepName     String?           @map("step_name") @db.VarChar(255)
+  stepOrder    Int?              @map("step_order")
+  status       AssessmentStatus?
+
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+
+  logs     String?
+  metadata Json?
+
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@map("assessment_pipeline_steps")
+}
+
+// =============================================================================
+// CLIMATE RISK RESULTS
+// =============================================================================
+
+model ClimateRiskScore {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId    String     @map("assessment_id") @db.Uuid
+  riskType        String?    @map("risk_type") @db.VarChar(100)
+  riskLevel       RiskLevel?
+  score           Decimal?   @db.Decimal(5, 2)
+  confidenceScore Decimal?   @map("confidence_score") @db.Decimal(5, 2)
+  rawData         Json?      @map("raw_data")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@index([assessmentId, riskType])
+  @@map("climate_risk_scores")
+}
+
+// =============================================================================
+// INDICATOR SCORES (30 per assessment, 5 per hazard)
+// =============================================================================
+
+model IndicatorScore {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId String  @map("assessment_id") @db.Uuid
+  hazardKey    String  @map("hazard_key") @db.VarChar(50)
+  /// Short code from `prana_climate/indicators.py::INDICATOR_WEIGHTS`,
+  /// e.g. "rx5day", "hwd", "fwi". Unique together with assessment + hazard.
+  indicatorCode String  @map("indicator_code") @db.VarChar(50)
+  /// Normalised 0-100 score (after min-max). Nullable because the
+  /// climate pipeline can return null for unavailable cells.
+  value           Decimal? @db.Decimal(5, 2)
+  /// Weight used in the weighted composite (methodology §10.2).
+  weight          Decimal? @db.Decimal(4, 3)
+  /// Optional human-readable raw value, e.g. "342 mm/yr".
+  /// Stored as text — different indicators have different units.
+  rawValue        String?  @map("raw_value") @db.VarChar(255)
+  /// Scenario + horizon this score came from. Several scenarios can
+  /// coexist per assessment; the dashboard picks the active one.
+  scenario        String?  @db.VarChar(20)
+  horizon         Int?
+
+  computedAt DateTime @default(now()) @map("computed_at") @db.Timestamptz
+
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, hazardKey, indicatorCode, scenario, horizon])
+  @@index([assessmentId])
+  @@index([hazardKey])
+  @@index([scenario, horizon])
+  @@map("indicator_scores")
+}
+
+// =============================================================================
+// SCENARIO ANALYSIS
+// =============================================================================
+
+model ScenarioAnalysis {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId   String  @map("assessment_id") @db.Uuid
+  scenarioName   String? @map("scenario_name") @db.VarChar(100)
+  timelineYear   Int?    @map("timeline_year")
+  riskSummary    Json?   @map("risk_summary")
+  projectionData Json?   @map("projection_data")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@unique([assessmentId, scenarioName, timelineYear])
+  @@map("scenario_analysis")
+}
+
+// =============================================================================
+// ESG INSIGHTS
+// =============================================================================
+
+model EsgInsight {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId       String   @map("assessment_id") @db.Uuid
+  category           String?  @db.VarChar(100)
+  insightTitle       String?  @map("insight_title") @db.VarChar(255)
+  insightDescription String?  @map("insight_description")
+  impactScore        Decimal? @map("impact_score") @db.Decimal(5, 2)
+  metadata           Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@map("esg_insights")
+}
+
+// =============================================================================
+// REPORTS
+// =============================================================================
+
+model Report {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId     String        @map("assessment_id") @db.Uuid
+  generatedById    String?       @map("generated_by") @db.Uuid
+  reportStatus     ReportStatus? @map("report_status")
+  fileUrl          String?       @map("file_url")
+  reportVersion    Int?          @map("report_version")
+  executiveSummary String?       @map("executive_summary")
+  aiSummary        String?       @map("ai_summary")
+
+  generatedAt DateTime? @map("generated_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  assessment  Assessment @relation(fields: [assessmentId], references: [id])
+  generatedBy User?      @relation("ReportGeneratedBy", fields: [generatedById], references: [id])
+
+  @@unique([assessmentId, reportVersion])
+  @@map("reports")
+}
+
+// =============================================================================
+// MARKETPLACE RECOMMENDATIONS
+// =============================================================================
+
+model MarketplaceRecommendation {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  assessmentId         String  @map("assessment_id") @db.Uuid
+  projectTitle         String? @map("project_title") @db.VarChar(255)
+  projectType          String? @map("project_type") @db.VarChar(100)
+  recommendationReason String? @map("recommendation_reason")
+  marketplaceUrl       String? @map("marketplace_url")
+  metadata             Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  assessment Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@map("marketplace_recommendations")
+}
+
+// =============================================================================
+// DASHBOARDS
+// =============================================================================
+
+model OrganizationDashboardSnapshot {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  organizationId      String   @map("organization_id") @db.Uuid
+  snapshotDate        DateTime @map("snapshot_date") @db.Date
+  totalAssets         Int?     @map("total_assets")
+  highRiskAssets      Int?     @map("high_risk_assets")
+  moderateRiskAssets  Int?     @map("moderate_risk_assets")
+  lowRiskAssets       Int?     @map("low_risk_assets")
+  aggregatedRiskScore Decimal? @map("aggregated_risk_score") @db.Decimal(5, 2)
+  dashboardPayload    Json?    @map("dashboard_payload")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, snapshotDate])
+  @@map("organization_dashboard_snapshots")
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// =============================================================================
+
+model Notification {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId   String            @map("user_id") @db.Uuid
+  type     NotificationType?
+  title    String?           @db.VarChar(255)
+  body     String?
+  isRead   Boolean           @default(false) @map("is_read")
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+// =============================================================================
+// AUDIT LOGS
+// =============================================================================
+
+model AuditLog {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  actorUserId String? @map("actor_user_id") @db.Uuid
+  entityType  String? @map("entity_type") @db.VarChar(100)
+  entityId    String? @map("entity_id") @db.Uuid
+  action      String? @db.VarChar(100)
+  oldValues   Json?   @map("old_values")
+  newValues   Json?   @map("new_values")
+  ipAddress   String? @map("ip_address") @db.Inet
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  actor User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// API KEYS    
+// =============================================================================
+
+model ApiKey {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String?   @db.VarChar(255)
+  keyHash        String?   @map("key_hash")
+  lastUsedAt     DateTime? @map("last_used_at") @db.Timestamptz
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  createdById    String?   @map("created_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id])
+  createdBy    User?        @relation("ApiKeyCreatedBy", fields: [createdById], references: [id])
+
+  @@map("api_keys")
+}
+
+// =============================================================================
+// AI JOBS (PREDICT)
+// =============================================================================
+
+model AIJob {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId       String  @map("user_id") @db.Uuid
+  assessmentId String? @map("assessment_id") @db.Uuid
+
+  jobType    String?  @map("job_type") @db.VarChar(100)
+  status     String?  @db.VarChar(50)
+  prompt     String?
+  result     Json?
+  errorMessage String? @map("error_message")
+
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  assessment Assessment? @relation(fields: [assessmentId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("ai_jobs")
+}
+
+// =============================================================================
+// MARKETPLACE PROJECTS
+// =============================================================================
+
+model Project {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  title       String  @db.VarChar(255)
+  slug        String  @unique @db.VarChar(255)
+  description String?
+  location    String? @db.VarChar(255)
+  country     String? @db.VarChar(100)
+
+  projectType   String? @map("project_type") @db.VarChar(100)
+  sector        String? @db.VarChar(100)
+  fundingTarget Decimal? @map("funding_target") @db.Decimal(18, 2)
+  currency      String?  @db.VarChar(10)
+  returnRate    Decimal? @map("return_rate") @db.Decimal(5, 2)
+  tenure        Int?     // in months
+
+  thumbnailUrl String? @map("thumbnail_url") @db.Text
+  bannerUrl    String? @map("banner_url") @db.Text
+  /// Public concept-note document URL (PDF) — for marketplace gated download
+  conceptNoteUrl     String?   @map("concept_note_url") @db.Text
+  /// Structured project milestones timeline (JSON array)
+  milestones        Json?     @map("milestones")
+  /// AI-generated recommendations shown on the project detail page
+  recommendations   Json?     @map("recommendations")
+  /// Short-horizon forecast (e.g. 12-month outlook)
+  forecast          Json?     @map("forecast")
+  tags         String[]
+
+  status           ProjectStatus?           @default(UPCOMING)
+  visibility       ProjectVisibility?       @default(PUBLIC)
+  approvalStatus   ProjectApprovalStatus?   @default(DRAFT) @map("approval_status")
+
+  organizationId String? @map("organization_id") @db.Uuid
+  metadata       Json?
+
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  organization    Organization?     @relation(fields: [organizationId], references: [id])
+  savedBy         SavedProject[]
+  dprRequests     DPRRequest[]
+  expressInterests ExpressInterest[]
+  messageThreads  MessageThread[]
+
+  @@index([status])
+  @@index([approvalStatus])
+  @@index([visibility])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+// =============================================================================
+// SAVED PROJECTS
+// =============================================================================
+
+model SavedProject {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId    String @map("user_id") @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("saved_projects")
+}
+
+// =============================================================================
+// DPR REQUESTS (DETAILED PROJECT REPORT)
+// =============================================================================
+
+model DPRRequest {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId    String @map("user_id") @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+
+  message  String?
+  status   String? @default("PENDING") @db.VarChar(50)
+  metadata Json?
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+  messageThreads MessageThread[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@map("dpr_requests")
+}
+
+// =============================================================================
+// EXPRESS INTERESTS
+// =============================================================================
+
+model ExpressInterest {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId    String @map("user_id") @db.Uuid
+  projectId String @map("project_id") @db.Uuid
+
+  investmentAmount Decimal? @map("investment_amount") @db.Decimal(18, 2)
+  message          String?
+  status           InterestStatus? @default(NEW)
+
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@map("express_interests")
+}
+
+// =============================================================================
+// CONTACT SUBMISSIONS
+// =============================================================================
+
+model ContactSubmission {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId String? @map("user_id") @db.Uuid
+
+  fullName String  @map("full_name") @db.VarChar(255)
+  email    String  @db.VarChar(255)
+  phone    String? @db.VarChar(30)
+  /// First-class columns so the admin leads page can show them
+  /// without parsing the metadata JSON blob. Existing rows that
+  /// have only `metadata.company` / `metadata.role` continue to
+  /// work — the service reads from metadata as a fallback.
+  company  String? @db.VarChar(255)
+  role     String? @db.VarChar(255)
+  subject  String? @db.VarChar(255)
+  message  String
+
+  status    String?  @default("UNREAD") @db.VarChar(50)
+  /// Distinguishes the source surface so the admin can filter
+  /// "marketplace-contact" vs "predict-contact" vs others.
+  source    String?  @db.VarChar(100)
+  metadata  Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([email])
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
+  @@map("contact_submissions")
+}
+
+// =============================================================================
+// SYSTEM EVENTS
+// =============================================================================
+
+model SystemEvent {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  eventName     String? @map("event_name") @db.VarChar(255)
+  aggregateType String? @map("aggregate_type") @db.VarChar(100)
+  aggregateId   String? @map("aggregate_id") @db.Uuid
+  payload       Json?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([eventName])
+  @@index([createdAt])
+  @@map("system_events")
+}
+
+// =============================================================================
+// IMPLEMENTATION PARTNERS
+// =============================================================================
+
+model ImplementationPartner {
+  id        String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Auto-generated readable ID, e.g. PRT-2024-01A
+  partnerId String? @unique @map("partner_id") @db.VarChar(50)
+
+  name         String           @db.VarChar(255)
+  type         PartnerType?
+  websiteUrl   String?          @map("website_url") @db.Text
+  logoUrl      String?          @map("logo_url") @db.Text
+  region       String?          @db.VarChar(255)
+  country      String?          @db.VarChar(100)
+  /// Tax / registration ID captured in the partner edit modal
+  taxId        String?          @map("tax_id") @db.VarChar(100)
+
+  /// Array of capabilities/expertise tags (preset + custom)
+  capabilities String[]
+
+  activeProjects Int?    @default(0) @map("active_projects")
+  totalImpact    String? @map("total_impact") @db.VarChar(100)
+
+  status ImplementationPartnerStatus @default(UNDER_REVIEW)
+
+  createdById String? @map("created_by") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  createdBy User? @relation("PartnerCreatedBy", fields: [createdById], references: [id])
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("implementation_partners")
+}
+
+// =============================================================================
+// USER NOTIFICATION PREFERENCES
+// =============================================================================
+
+model NotificationPreference {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+
+  /// Master email toggle (overrides per-channel when false)
+  emailEnabled Boolean @default(true) @map("email_enabled")
+  inAppEnabled Boolean @default(true) @map("in_app_enabled")
+
+  /// Per-event-type channels: { type: { email: bool, inApp: bool, sms: bool } }
+  items Json?
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("notification_preferences")
+}
+
+// =============================================================================
+// MARKETPLACE MESSAGING (user ↔ project owner)
+// =============================================================================
+
+model MessageThread {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// A thread is anchored on a project (DPR or general enquiry)
+  projectId String? @map("project_id") @db.Uuid
+  /// Optional anchor to a DPR request
+  dprRequestId String? @map("dpr_request_id") @db.Uuid
+
+  subject String? @db.VarChar(255)
+
+  lastMessageAt DateTime? @map("last_message_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  project     Project?      @relation(fields: [projectId], references: [id])
+  dprRequest  DPRRequest?   @relation(fields: [dprRequestId], references: [id])
+  participants MessageParticipant[]
+  messages     Message[]
+
+  @@index([projectId])
+  @@index([dprRequestId])
+  @@index([lastMessageAt])
+  @@map("message_threads")
+}
+
+model MessageParticipant {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  threadId String @map("thread_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+
+  role String? @default("MEMBER") @db.VarChar(50) // OWNER | MEMBER | ADMIN
+  lastReadAt DateTime? @map("last_read_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@map("message_participants")
+}
+
+model Message {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  threadId String @map("thread_id") @db.Uuid
+  senderId String @map("sender_id") @db.Uuid
+
+  body       String
+  attachments Json?
+  readAt    DateTime? @map("read_at") @db.Timestamptz
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User          @relation("MessagesSent", fields: [senderId], references: [id])
+
+  @@index([threadId, createdAt])
+  @@map("messages")
+}
+
+// =============================================================================
+// HELP & SUPPORT
+// =============================================================================
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  @@map("ticket_status")
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+  @@map("ticket_priority")
+}
+
+model HelpCategory {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  name        String  @unique @db.VarChar(100)
+  slug        String  @unique @db.VarChar(100)
+  description String?
+  icon        String? @db.VarChar(50)
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  articles HelpArticle[]
+  faqs     HelpFaq[]
+
+  @@map("help_categories")
+}
+
+model HelpArticle {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  categoryId String? @map("category_id") @db.Uuid
+
+  title       String  @db.VarChar(255)
+  slug        String  @unique @db.VarChar(255)
+  excerpt     String? @db.VarChar(500)
+  body        String?
+  readTimeMin Int?    @map("read_time_min")
+  viewCount   Int     @default(0) @map("view_count")
+
+  isPublished Boolean @default(false) @map("is_published")
+  isFeatured  Boolean @default(false) @map("is_featured")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  category HelpCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([isPublished])
+  @@map("help_articles")
+}
+
+model HelpFaq {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  categoryId String? @map("category_id") @db.Uuid
+
+  question String
+  answer   String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  isPublished Boolean @default(true) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  category HelpCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@map("help_faqs")
+}
+
+model SupportTicket {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  userId String? @map("user_id") @db.Uuid
+
+  subject     String         @db.VarChar(255)
+  description String
+  status      TicketStatus   @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+
+  attachments Json?
+
+  resolvedAt DateTime? @map("resolved_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User? @relation("TicketsRaised", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+// =============================================================================
+// ORGANIZATION-LEVEL FEEDBACK / IMPACT METRICS
+// =============================================================================
+
+model SustainabilityImpact {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  /// Snapshot key e.g. "global" or "organization:<id>"
+  scope String @unique @db.VarChar(100)
+
+  carbonSavedTons    Decimal? @map("carbon_saved_tons") @db.Decimal(18, 2)
+  waterConservedTons Decimal? @map("water_conserved_tons") @db.Decimal(18, 2)
+  hectaresRestored   Decimal? @map("hectares_restored") @db.Decimal(18, 2)
+  beneficiaries      Int?
+
+  /// Free-form metric blobs so the dashboard can render new KPIs without migration
+  metrics Json?
+
+  asOf DateTime? @map("as_of") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("sustainability_impact")
+}

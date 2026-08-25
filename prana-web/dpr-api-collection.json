@@ -1,0 +1,375 @@
+{
+  "info": {
+    "_postman_id": "8b5f3a09-7d04-45eb-89ea-d5c4146bb12b",
+    "name": "Prana Earth Marketplace & DPR APIs",
+    "description": "Endpoints to manage Detailed Project Report (DPR) inquiries, check user eligibility, handle bulk project uploads, S3 upload URLs, project deletion with S3 cleanup, and AI context retrieval.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "DPR Requests",
+      "item": [
+        {
+          "name": "Check DPR Eligibility",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr/eligibility",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr",
+                "eligibility"
+              ]
+            },
+            "description": "Checks if the logged-in user has active paid subscription to request a DPR."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit DPR Inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"ef4d6098-0269-416f-9810-00886b5bbb7c\",\n  \"fullName\": \"Eleanor Vance\",\n  \"email\": \"eleanor.vance@hillhouse.com\",\n  \"phone\": \"+1 (555) 019-2834\",\n  \"companyName\": \"Renewable Energy Solutions\",\n  \"industry\": \"Energy\",\n  \"sustainabilityBudget\": \"$2.5M - $5M\",\n  \"primaryMotivation\": \"Regulatory Compliance\",\n  \"companySize\": \"Enterprise (1000+ employees)\",\n  \"regionsOfInterest\": [\"Latin America\", \"Southeast Asia\"],\n  \"certifications\": [\"Verra (VCS)\", \"Gold Standard\"],\n  \"additionalRequirements\": \"We require detailed vintage reporting for projects initiated between 2018 and 2022.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr"
+              ]
+            },
+            "description": "Submit a new Detailed Project Report (DPR) inquiry. Requires paid subscription."
+          },
+          "response": []
+        },
+        {
+          "name": "List DPR Requests (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr?page=1&pageSize=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Fetch a paginated list of all DPR inquiries. Accessible by Admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Get DPR Request Details (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr/{{dpr_request_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr",
+                "{{dpr_request_id}}"
+              ]
+            },
+            "description": "Fetch detailed fields for a specific DPR inquiry. Accessible by Admin only."
+          },
+          "response": []
+        },
+        {
+          "name": "Update DPR Request Status (Admin Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr/{{dpr_request_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr",
+                "{{dpr_request_id}}"
+              ]
+            },
+            "description": "Update the status of a DPR request."
+          },
+          "response": []
+        },
+        {
+          "name": "Reply / Mark as Responded (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"replyMessage\": \"Hello, we have processed your DPR inquiry. Our team will share the document shortly. Thank you!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr/{{dpr_request_id}}/reply",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr",
+                "{{dpr_request_id}}",
+                "reply"
+              ]
+            },
+            "description": "Sends a reply to the user using AWS SES and sets status to RESPONDED."
+          },
+          "response": []
+        },
+        {
+          "name": "Export DPR Requests (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr",
+                "export"
+              ]
+            },
+            "description": "Retrieves all requests formatted for Excel/CSV columns: inquiryId, Organization, Complexity, Status, Date."
+          },
+          "response": []
+        },
+        {
+          "name": "Total DPR Count (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/dpr/count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "dpr",
+                "count"
+              ]
+            },
+            "description": "Get total DPR count to show on the top of the admin page."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Marketplace Projects (Bulk)",
+      "item": [
+        {
+          "name": "Get S3 Upload URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/projects/upload-url?fileName=budget_forecast_2024.pdf&contentType=application/pdf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "projects",
+                "upload-url"
+              ],
+              "query": [
+                {
+                  "key": "fileName",
+                  "value": "budget_forecast_2024.pdf"
+                },
+                {
+                  "key": "contentType",
+                  "value": "application/pdf"
+                }
+              ]
+            },
+            "description": "Retrieves a presigned PUT URL for direct-to-S3 media uploading."
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Upload Projects",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projects\": [\n    {\n      \"title\": \"Kenyah Solar Microgrid\",\n      \"projectType\": \"Water\",\n      \"subType\": \"Groundwater\",\n      \"implementationPartner\": \"GreenEarth Org\",\n      \"durationYears\": 5,\n      \"totalInvestment\": 310000,\n      \"primaryAddress\": \"Nyeri County, Kenya\",\n      \"sdgs\": [6, 7, 13],\n      \"mediaFiles\": [\n        {\n          \"fileName\": \"microgrid_overview.jpg\",\n          \"fileUrl\": \"https://prana-marketplace-media.s3.ap-southeast-1.amazonaws.com/marketplace/projects/example-image.jpg\",\n          \"fileType\": \"image\"\n        },\n        {\n          \"fileName\": \"budget_forecast_2024.pdf\",\n          \"fileUrl\": \"https://prana-marketplace-media.s3.ap-southeast-1.amazonaws.com/marketplace/projects/budget_forecast_2024.pdf\",\n          \"fileType\": \"pdf\"\n        }\n      ]\n    },\n    {\n      \"title\": \"Amazon Reforestation Initiative\",\n      \"projectType\": \"Nature\",\n      \"subType\": \"Reforestration\",\n      \"implementationPartner\": \"GreenEarth Org\",\n      \"durationYears\": 10,\n      \"totalInvestment\": 1500000,\n      \"primaryAddress\": \"Amazonas, Brazil\",\n      \"sdgs\": [13, 15],\n      \"mediaFiles\": [\n        {\n          \"fileName\": \"forest_restoration.jpg\",\n          \"fileUrl\": \"https://prana-marketplace-media.s3.ap-southeast-1.amazonaws.com/marketplace/projects/example-image2.jpg\",\n          \"fileType\": \"image\"\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/projects/bulk?publish=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "projects",
+                "bulk"
+              ],
+              "query": [
+                {
+                  "key": "publish",
+                  "value": "true",
+                  "description": "Set to true to publish directly (FUNDING_OPEN), false to save as draft (DRAFT)"
+                }
+              ]
+            },
+            "description": "Bulk uploads multiple projects in a single batch request."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project (with S3 cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/projects/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "projects",
+                "{{project_id}}"
+              ]
+            },
+            "description": "Deletes the project record and automatically removes all associated image and document media from S3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project AI Context",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/marketplace/projects/ai-context/{{project_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "marketplace",
+                "projects",
+                "ai-context",
+                "{{project_id}}"
+              ]
+            },
+            "description": "Dedicated API for the AI team to retrieve all structured details, images, and document URLs for summary generation."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "dpr_request_id",
+      "value": "ENTER_DPR_REQUEST_UUID_HERE",
+      "type": "string"
+    },
+    {
+      "key": "project_id",
+      "value": "ENTER_PROJECT_UUID_HERE",
+      "type": "string"
+    }
+  ]
+}

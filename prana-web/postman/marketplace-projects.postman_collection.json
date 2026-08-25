@@ -1,0 +1,188 @@
+{
+  "info": {
+    "name": "Prana Earth - Marketplace Projects API",
+    "description": "Complete Postman collection for Marketplace Project CRUD operations. Covers admin creation, listing, filtering, update, and soft-delete.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Project",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Test Solar Farm Initiative\",\n  \"description\": \"A test renewable energy project implementing solar panel farms in desert regions to provide clean electricity.\",\n  \"location\": \"Rajasthan, India\",\n  \"country\": \"India\",\n  \"projectType\": \"Renewable Energy\",\n  \"sector\": \"Solar Utility\",\n  \"fundingTarget\": 550000,\n  \"currency\": \"USD\",\n  \"returnRate\": 10.5,\n  \"tenure\": 48,\n  \"thumbnailUrl\": \"https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=600\",\n  \"bannerUrl\": \"https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1200\",\n  \"tags\": [\"Solar\", \"India\", \"Clean Energy\"],\n  \"status\": \"FUNDING_OPEN\",\n  \"visibility\": \"PUBLIC\",\n  \"approvalStatus\": \"PUBLISHED\",\n  \"metadata\": {\n    \"latitude\": 26.9124,\n    \"longitude\": 70.9016,\n    \"implementationPartner\": \"Thar Solar Alliance\",\n    \"targetSdgs\": [\"7 Affordable Energy\", \"13 Climate Action\"],\n    \"coreMetrics\": [\n      { \"name\": \"Clean Energy Output\", \"value\": 2500000, \"unit\": \"kWh/yr\" },\n      { \"name\": \"Households Powered\", \"value\": 5000, \"unit\": \"Households\" }\n    ],\n    \"documents\": [\n      { \"name\": \"Project Brief\", \"url\": \"https://example.com/brief.pdf\" }\n    ]\n  }\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "201 Created",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Project created successfully.\",\n  \"data\": {\n    \"project\": {\n      \"id\": \"uuid\",\n      \"title\": \"Test Solar Farm Initiative\",\n      \"slug\": \"test-solar-farm-initiative\",\n      \"description\": \"A test renewable energy project...\",\n      \"location\": \"Rajasthan, India\",\n      \"country\": \"India\",\n      \"projectType\": \"Renewable Energy\",\n      \"sector\": \"Solar Utility\",\n      \"fundingTarget\": \"550000\",\n      \"currency\": \"USD\",\n      \"returnRate\": \"10.50\",\n      \"tenure\": 48,\n      \"thumbnailUrl\": \"https://...\",\n      \"bannerUrl\": \"https://...\",\n      \"tags\": [\"Solar\", \"India\", \"Clean Energy\"],\n      \"status\": \"FUNDING_OPEN\",\n      \"visibility\": \"PUBLIC\",\n      \"approvalStatus\": \"PUBLISHED\",\n      \"metadata\": { ... },\n      \"createdAt\": \"2026-07-01T...\",\n      \"updatedAt\": \"2026-07-01T...\"\n    }\n  }\n}"
+        },
+        {
+          "name": "400 Validation Error",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed.\",\n  \"errors\": [\n    { \"field\": \"title\", \"message\": \"Title must be at least 3 characters\" }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. List All Projects",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects"]
+        }
+      },
+      "response": [
+        {
+          "name": "200 Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Projects retrieved successfully.\",\n  \"data\": {\n    \"total\": 5,\n    \"items\": [\n      {\n        \"id\": \"uuid\",\n        \"title\": \"Amazonian Rainforest Reforestation\",\n        \"slug\": \"amazonian-rainforest-reforestation\",\n        \"status\": \"FUNDING_OPEN\",\n        \"thumbnailUrl\": \"https://...\",\n        \"fundingTarget\": \"450000\",\n        \"returnRate\": \"8.50\",\n        \"tenure\": 36,\n        \"tags\": [\"Carbon Credits\", \"Amazon\"]\n      }\n    ]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. List Projects (Filtered)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects?status=FUNDING_OPEN&visibility=PUBLIC&approvalStatus=PUBLISHED&limit=10&offset=0",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects"],
+          "query": [
+            { "key": "status", "value": "FUNDING_OPEN" },
+            { "key": "visibility", "value": "PUBLIC" },
+            { "key": "approvalStatus", "value": "PUBLISHED" },
+            { "key": "limit", "value": "10" },
+            { "key": "offset", "value": "0" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. List Projects (Search)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects?search=solar",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects"],
+          "query": [
+            { "key": "search", "value": "solar" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Project By ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects", "{{projectId}}"]
+        }
+      },
+      "response": [
+        {
+          "name": "200 Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Project retrieved successfully.\",\n  \"data\": {\n    \"project\": {\n      \"id\": \"uuid\",\n      \"title\": \"Amazonian Rainforest Reforestation\",\n      \"slug\": \"amazonian-rainforest-reforestation\",\n      \"description\": \"...\",\n      \"location\": \"Amazonas State, Brazil\",\n      \"country\": \"Brazil\",\n      \"metadata\": {\n        \"latitude\": -3.4653,\n        \"longitude\": -62.2159,\n        \"targetSdgs\": [\"13 Climate Action\", ...],\n        \"coreMetrics\": [ ... ]\n      }\n    }\n  }\n}"
+        },
+        {
+          "name": "400 Not Found",
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Project not found\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "6. Get Project By Slug",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects/amazonian-rainforest-reforestation",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects", "amazonian-rainforest-reforestation"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Update Project",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects", "{{projectId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Project Title\",\n  \"status\": \"ACTIVE\",\n  \"fundingTarget\": 600000,\n  \"metadata\": {\n    \"latitude\": 26.92,\n    \"longitude\": 70.91,\n    \"implementationPartner\": \"Updated Partner Name\"\n  }\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "200 Updated",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Project updated successfully.\",\n  \"data\": {\n    \"project\": { ... }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "8. Delete Project (Soft Delete)",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/api/marketplace/projects/{{projectId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "marketplace", "projects", "{{projectId}}"]
+        }
+      },
+      "response": [
+        {
+          "name": "200 Deleted",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Project deleted successfully.\"\n}"
+        }
+      ]
+    }
+  ]
+}
