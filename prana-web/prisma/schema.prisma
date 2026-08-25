@@ -360,7 +360,7 @@ model OrganizationMember {
 
   organizationId String   @map("organization_id") @db.Uuid
   userId         String   @map("user_id") @db.Uuid
-  role           UserRole
+  role           OrganizationRole
 
   joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
 
