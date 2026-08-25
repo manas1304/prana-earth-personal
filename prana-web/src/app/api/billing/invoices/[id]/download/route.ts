@@ -33,14 +33,14 @@ import {
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Not authenticated" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const { id } = await params;
@@ -62,13 +62,13 @@ export async function GET(
     if (!payment) {
       return NextResponse.json(
         { success: false, message: "Invoice not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
     if (payment.status !== "SUCCESS") {
       return NextResponse.json(
         { success: false, message: "Invoice is not available" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -94,7 +94,7 @@ export async function GET(
         // Placeholder for a real PDF generator. Until pdfkit is wired,
         // the JSON points the client at the text download.
         envelope.data = {
-          ...envelope.data,
+          ...(envelope.data as Record<string, any>),
           downloadUrl: `/api/billing/invoices/${payment.id}/download?format=text`,
           note: "PDF generation not yet wired — falling back to plain-text.",
         };
@@ -129,7 +129,7 @@ export async function GET(
     logger.error({ err: error }, "Failed to download invoice");
     return NextResponse.json(
       { success: false, message: error.message || "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
