@@ -9,7 +9,7 @@ import { NextResponse, type NextRequest } from "next/server";
 //      gating for /admin.
 //  - If the path already starts with /sites/, do nothing (avoids re-rewriting
 //    on each request → infinite 431 loop bug).
-export function proxy(req: NextRequest) {
+export default function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const hostname = req.headers.get("host") || "";
   const pathname = url.pathname;
