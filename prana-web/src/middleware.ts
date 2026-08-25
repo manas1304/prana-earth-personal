@@ -35,8 +35,8 @@ export default function middleware(req: NextRequest) {
     hostname.startsWith("192.168.");
   const isVercelPreview = hostname.includes(".vercel.app");
   const isMarketplaceHost =
-    hostname === "marketplace.localhost:3000" ||
-    hostname === "marketplace.prana-earth-psi.vercel.app" ||
+    hostname === "https://prana-earth-personal-gamma.vercel.app/" ||
+    hostname === "https://prana-earth-personal-gamma.vercel.app/" ||
     hostname.startsWith("marketplace.");
   const isAdminHost =
     hostname === "admin.localhost:3000" || hostname.startsWith("admin.");
