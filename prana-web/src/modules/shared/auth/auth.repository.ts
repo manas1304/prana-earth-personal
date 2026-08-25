@@ -7,6 +7,7 @@ import {
   Session,
   OAuthAccount,
   UserRole,
+  Prisma,
 } from "@/generated/prisma/client";
 
 
@@ -42,7 +43,7 @@ export const authRepository = {
     });
   },
 
-  async updateUser(id: string, data: Partial<Omit<User, "id" | "createdAt" | "updatedAt">>): Promise<User> {
+  async updateUser(id: string, data: Prisma.UserUpdateInput): Promise<User> {
     return prisma.user.update({
       where: { id },
       data,
