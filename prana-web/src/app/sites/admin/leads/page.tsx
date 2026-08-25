@@ -203,7 +203,7 @@ export default function LeadsPage() {
       if (res?.success) {
         toast.success(`Reply sent to ${email}`, { id: toastId });
         setReplyDraft("");
-        fetchDprRequests();
+        getDprRequests();
       } else {
         toast.error(res?.message || "Failed to send reply.", { id: toastId });
       }
